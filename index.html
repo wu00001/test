@@ -264,11 +264,7 @@
   <div id="loading">加载中...</div>
   <div class="fade"></div>
 
-  <div class="scene-buttons">
-    <button onclick="switchScene('scene1')" class="scene-btn" id="scene1-btn">山脉全景</button>
-    <button onclick="switchScene('scene2')" class="scene-btn" id="scene2-btn">天文台全景</button>
-    <button onclick="switchScene('scene3')" class="scene-btn" id="scene3-btn">博物馆全景</button>
-  </div>
+  <div class="scene-buttons" id="sceneButtons"></div>
 
   <div class="audio-control">
     <button id="audioBtn" class="audio-btn">
@@ -276,9 +272,7 @@
     </button>
   </div>
 
-  <audio id="bgMusic" loop>
-    <source src="http://music.163.com/song/media/outer/url?id=1901371647.mp3" type="audio/mpeg">
-  </audio>
+  <audio id="bgMusic" loop></audio>
 
   <audio id="narrativeAudio">
     <source src="" type="audio/mpeg">
@@ -312,21 +306,6 @@
     let autoRotate = false;
 
     // 添加场景切换功能
-    const scenes = {
-      scene1: {
-        url: 'https://pannellum.org/images/cerro-toco-0.jpg',
-        name: '山脉全景'
-      },
-      scene2: {
-        url: 'https://pannellum.org/images/alma.jpg',
-        name: '天文台全景'
-      },
-      scene3: {
-        url: 'https://pannellum.org/images/bma-1.jpg',
-        name: '博物馆全景'
-      }
-    };
-
     let currentScene = 'scene1';
 
     // 修改初始化动画相关变量
@@ -348,64 +327,8 @@
       },
       // 使用更平滑的缓动函数
       easing: function (t) {
-        // easeOutCirc - 开始快然后逐渐减速
+        // easeOutCirc - 始快然后逐渐减速
         return Math.sqrt(1 - Math.pow(t - 1, 2));
-      }
-    };
-
-    // 修改热点配置，使用球面坐标系（经纬度）
-    const hotspots = {
-      scene1: [
-        {
-          position: new THREE.Vector3(-350, 100, 200), // 在3D空间中的固定坐标
-          title: '天文台',
-          description: '点击前往天文台',
-          target: 'scene2'
-        },
-        {
-          position: new THREE.Vector3(300, -50, -300),
-          title: '博物馆',
-          description: '点击前往博物馆',
-          target: 'scene3'
-        }
-      ],
-      scene2: [
-        {
-          position: new THREE.Vector3(0, 0, -400),
-          title: '返回山脉',
-          description: '返回山脉全景',
-          target: 'scene1'
-        }
-      ],
-      scene3: [
-        {
-          position: new THREE.Vector3(0, 100, -400),
-          title: '返回山脉',
-          description: '返回山脉全景',
-          target: 'scene1'
-        }
-      ]
-    };
-
-    // 修改场景解说配置
-    const narratives = {
-      scene1: {
-        text: `这里是美丽的山脉全景。远处连绵的群山层峦叠嶂，山峰直插云霄，云雾缭绕其间，
-              呈现出一幅壮丽的自然画卷。在山脉的怀抱中，我们的村庄静静地依偎在山脚下，
-              传统的建筑与自然环境完美融合，展现出独特的乡村魅力。您可以看到远处的天文台和博物馆，
-              这些都是我们村庄的文化地标。`
-      },
-      scene2: {
-        text: `这里是我们村里的天文台，建于2020年，是村里重要的科普教育基地。
-              天文台采用现代化的设计，配备了专业的天文望远镜和观测设备。
-              在这里，游客可以观测星空，了解天文知识，每到晴朗的夜晚，
-              这里都会举办星空观测活动，深受村民和游客的喜爱。`
-      },
-      scene3: {
-        text: `这是我们村的博物馆，收藏展示了大量珍贵的历史文物和民俗展品。
-              博物馆分为历史展区、民俗展区和非遗展区三个主要部分。
-              在这里，您可以了解到我们村的发展历史、传统文化和民间艺术。
-              博物馆不仅是一个展示空间，也是村民文化活动的重要场所。`
       }
     };
 
@@ -417,25 +340,21 @@
 
     // 解说控制函数
     function toggleNarrative() {
-      const currentNarrative = narratives[currentScene];
+      const currentNarrative = narratives[currentScene]?.narrative;
 
-      if (!isNarrativePlaying) {
+      if (!isNarrativePlaying && currentNarrative) {
         // 开始播放解说
         if (bgMusic && !bgMusic.paused) {
           bgMusic.volume = 0.2;
         }
 
-        const text = currentNarrative.text;
-
         if ('speechSynthesis' in window) {
-          const utterance = new SpeechSynthesisUtterance(text);
+          const utterance = new SpeechSynthesisUtterance(currentNarrative);
           utterance.lang = 'zh-CN';
-          utterance.rate = 0.9;  // 稍微放慢语速
-          utterance.pitch = 1.2; // 提高一点音调
+          utterance.rate = 0.9;
+          utterance.pitch = 1.2;
 
-          // 获取所有可用的语音
           const voices = speechSynthesis.getVoices();
-          // 直接指定 Microsoft Xiaoxiao - Chinese (Mainland)
           const preferredVoice = voices.find(voice =>
             voice.name === 'Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland)'
           );
@@ -443,7 +362,6 @@
           if (preferredVoice) {
             utterance.voice = preferredVoice;
           } else {
-            // 备选 Microsoft Huihui
             const fallbackVoice = voices.find(voice =>
               voice.name === 'Microsoft Huihui Desktop - Chinese (Mainland)'
             );
@@ -852,20 +770,20 @@
       }
     }
 
-    // 添��音频控制
+    // 添音频控制
     let isPlaying = true;
     const audioBtn = document.getElementById('audioBtn');
-    const bgMusic = document.getElementById('bgMusic');
+    const bgMusicElement = document.getElementById('bgMusic');
     const audioIcon = audioBtn.querySelector('.audio-icon');
 
     // 音频控制函数
     function toggleAudio() {
       if (isPlaying) {
-        bgMusic.pause();
+        bgMusicElement.pause();
         audioIcon.classList.remove('playing');
         audioIcon.classList.add('paused');
       } else {
-        bgMusic.play();
+        bgMusicElement.play();
         audioIcon.classList.remove('paused');
         audioIcon.classList.add('playing');
       }
@@ -889,7 +807,7 @@
       }
     });
 
-    // 由于语音列表可能需要一段时间才能加载完成,添加以下代码来确保我们能获取到所有声音:
+    // 由于语音列表可能需要一段时间才能加载完成,添加以下代码来确保们能获取到所有声:
     if ('speechSynthesis' in window) {
       // Chrome 需要这个 hack 来正确加载声音列表
       speechSynthesis.getVoices();
@@ -945,9 +863,47 @@
 
     // 添加点击事件监听
     container.addEventListener('click', onMouseClick);
+
+    // 获取URL参数
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search)
+      const scenes = JSON.parse(decodeURIComponent(params.get('scenes') || '{}'))
+      const bgMusic = JSON.parse(decodeURIComponent(params.get('bgMusic') || '{}'))
+      const initialScene = params.get('initialScene') || 'scene1'
+
+      return {
+        scenes,
+        bgMusic,
+        initialScene
+      }
+    }
+
+    // 初始化时使用参数
+    const { scenes, bgMusic, initialScene } = getUrlParams()
+    currentScene = initialScene
+
+    // 设置背景音乐
+    if (bgMusic.url) {
+      bgMusicElement.src = bgMusic.url
+    }
+
+    function generateSceneButtons() {
+      const buttonsContainer = document.getElementById('sceneButtons');
+      Object.entries(scenes).forEach(([sceneId, scene]) => {
+        const button = document.createElement('button');
+        button.onclick = () => switchScene(sceneId);
+        button.className = 'scene-btn';
+        button.id = `${sceneId}-btn`;
+        button.textContent = scene.name;
+        buttonsContainer.appendChild(button);
+      });
+    }
+
+    // 在获取URL参数后调用
+    const { scenes, bgMusic, initialScene } = getUrlParams();
+    currentScene = initialScene;
+    generateSceneButtons(); // 生成场景按钮
   </script>
 </body>
-
-</html>
 
 </html>
