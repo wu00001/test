@@ -98,35 +98,25 @@
       position: fixed;
       width: 32px;
       height: 32px;
+      transform: translate(-50%, -50%);
       transform-origin: center center;
       will-change: transform;
       pointer-events: auto;
       cursor: pointer;
       z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .hotspot::before {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.2);
-      border: 2px solid #fff;
-      border-radius: 50%;
-      box-sizing: border-box;
-      animation: pulse 2s infinite;
-    }
-
-    .hotspot::after {
-      content: '';
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      background: #fff;
-      border-radius: 50%;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
+    .hotspot-icon {
+      width: 24px;
+      height: 24px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDljMCA1LjI1IDcgMTMgNyAxM3M3LTcuNzUgNy0xM2MwLTMuODctMy4xMy03LTctN3ptMCA5LjVjLTEuMzggMC0yLjUtMS4xMi0yLjUtMi41czEuMTItMi41IDIuNS0yLjUgMi41IDEuMTIgMi41IDIuNS0xLjEyIDIuNS0yLjUgMi41eiIvPjwvc3ZnPg==');
+      /* 这是一个地图标记的图标 */
     }
 
     .hotspot-info {
@@ -150,23 +140,6 @@
       opacity: 1;
     }
 
-    @keyframes pulse {
-      0% {
-        transform: scale(0.8);
-        opacity: 0.8;
-      }
-
-      50% {
-        transform: scale(1.2);
-        opacity: 0.4;
-      }
-
-      100% {
-        transform: scale(0.8);
-        opacity: 0.8;
-      }
-    }
-
     .audio-control {
       position: fixed;
       top: 60px;
@@ -188,30 +161,41 @@
     }
 
     .audio-icon {
-      width: 14px;
-      height: 14px;
-      background-size: contain;
+      width: 16px;
+      height: 16px;
+      background-size: 16px;
       background-repeat: no-repeat;
       background-position: center;
+      transition: transform 0.3s ease;
     }
 
     .audio-icon.playing {
-      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTMgOXYNmgNsMTItOXYxOGwtMTItOUgzeiIvPjwvc3ZnPg==');
-      animation: audioRotate 3s linear infinite;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTEyIDNWMTJMOCA4TTEyIDN2OWw0LTRNMTYuNSAxN2MxLjM4IDAgMi41LTEuMTIgMi41LTIuNVMxNy44OCAxMiAxNi41IDEyYy0xLjM4IDAtMi41IDEuMTItMi41IDIuNXMxLjEyIDIuNSAyLjUgMi41TTcuNSAxN2MxLjM4IDAgMi41LTEuMTIgMi41LTIuNVM4Ljg4IDEyIDcuNSAxMkM2LjEyIDEyIDUgMTMuMTIgNSAxNC41UzYuMTIgMTcgNy41IDE3Ii8+PC9zdmc+');
+      animation: bounce 1s infinite;
     }
 
     .audio-icon.paused {
-      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTYgNWgybDEyIDd2LTdoMnYxOGgtMnYtN2wtMTIgN2gtMnoiLz48L3N2Zz4=');
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTEyIDNWMTJMOCA4TTEyIDN2OWw0LTRNMTYuNSAxN2MxLjM4IDAgMi41LTEuMTIgMi41LTIuNVMxNy44OCAxMiAxNi41IDEyYy0xLjM4IDAtMi41IDEuMTItMi41IDIuNXMxLjEyIDIuNSAyLjUgMi41TTcuNSAxN2MxLjM4IDAgMi41LTEuMTIgMi41LTIuNVM4Ljg4IDEyIDcuNSAxMkM2LjEyIDEyIDUgMTMuMTIgNSAxNC41UzYuMTIgMTcgNy41IDE3Ii8+PC9zdmc+');
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-2px);
+      }
+    }
+
+    .audio-icon.paused {
+      transform: rotate(-90deg);
     }
 
     @keyframes audioRotate {
-      from {
-        transform: rotate(0deg);
-      }
-
-      to {
-        transform: rotate(360deg);
-      }
+      /* 移除旧的旋转动画 */
     }
 
     .narrative-control {
@@ -355,7 +339,7 @@
       transform: scale(0.95);
     }
 
-    /* 添加按钮的过渡效果 */
+    /* 按钮的过渡效果 */
     .audio-btn,
     .narrative-btn,
     .reset-view-btn {
@@ -431,26 +415,22 @@
 
     let currentScene = 'scene1';
 
-    // 修改初始化动画相关变量
+    // 修改初始化动画相关变量,使用场景配置的初始视角
     let initialAnimation = {
       active: false,
       startTime: 0,
-      duration: 3000,  // 延长到3秒，让动画更平缓
-      // 起始状态正上方垂直俯视
+      duration: 3000,
       start: {
-        fov: 100,      // 更大的视野
-        lat: 89.9,     // 几乎垂直向下（90度会导致万向锁，所以用89.9）
-        lon: 0         // 正对方向
+        fov: 100,
+        lat: 89.9,
+        lon: 0
       },
-      // 结束状态：常视角
       end: {
-        fov: 75,       // 正常视野
-        lat: 0,        // 水平视角
-        lon: 0         // 保持正对方向
+        fov: 75,       // 将使用场景配置的值
+        lat: 0,        // 将使用场景配置的值
+        lon: 0         // 将使用场景配置的值
       },
-      // 使用更平滑的缓动函
       easing: function (t) {
-        // easeOutCirc - 开始快然后逐渐减速
         return Math.sqrt(1 - Math.pow(t - 1, 2));
       }
     };
@@ -517,7 +497,7 @@
     // 添加点击事件
     narrativeBtn.addEventListener('click', toggleNarrative);
 
-    // 在切换场景时止当前解说
+    // 在换场景时止当前解说
     const originalSwitchScene = switchScene;
     switchScene = function (sceneName) {
       if (isNarrativePlaying) {
@@ -528,19 +508,44 @@
 
     // 修改创建热点的函数
     function createHotspots() {
-      // 移除现有热点
+      // 除现有热点
       const existingHotspots = document.querySelectorAll('.hotspot');
       existingHotspots.forEach(hotspot => hotspot.remove());
 
       // 为当前场景创建热点
       const currentHotspots = scenes[currentScene]?.hotspots || [];
       currentHotspots.forEach((hotspot, index) => {
-        // 创建3D物体作为热点
+        // 创建热点容器
+        const element = document.createElement('div');
+        element.className = 'hotspot';
+        element.id = `hotspot-${index}`;
+
+        // 添加图标
+        const icon = document.createElement('div');
+        icon.className = 'hotspot-icon';
+        // 使用热点配置中的图标，如果没有则使用默认图标
+        icon.style.backgroundImage = `url('${hotspot.icon || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDljMCA1LjI1IDcgMTMgNyAxM3M3LTcuNzUgNy0xM2MwLTMuODctMy4xMy03LTctN3ptMCA5LjVjLTEuMzggMC0yLjUtMS4xMi0yLjUtMi41czEuMTItMi41IDIuNS0yLjUgMi41IDEuMTIgMi41IDIuNS0xLjEyIDIuNS0yLjUgMi41eiIvPjwvc3ZnPg=='}')`;
+        element.appendChild(icon);
+
+        // 创建热点信息提示
+        const info = document.createElement('div');
+        info.className = 'hotspot-info';
+        info.textContent = `${hotspot.title}: ${hotspot.description}`;
+        element.appendChild(info);
+
+        // 添加点击事件
+        element.addEventListener('click', () => {
+          if (hotspot.target) {
+            switchScene(hotspot.target);
+          }
+        });
+
+        document.getElementById('container').appendChild(element);
+
+        // 创建3D物体作为热点位置参考
         const geometry = new THREE.SphereGeometry(10, 16, 16);
         const material = new THREE.MeshBasicMaterial({
-          color: 0xffffff,
-          transparent: true,
-          opacity: 0.8
+          visible: false  // 将3D物体设为不可见，只用于位置计算
         });
         const mesh = new THREE.Mesh(geometry, material);
 
@@ -548,14 +553,6 @@
         mesh.position.copy(hotspot.position);
         mesh.name = `hotspot-${index}`;
         scene.add(mesh);
-
-        // 创建HTML元素显示热点信息
-        const element = document.createElement('div');
-        element.className = 'hotspot-info';
-        element.style.display = 'none';
-        element.textContent = `${hotspot.title}: ${hotspot.description}`;
-        document.getElementById('container').appendChild(element);
-        element.id = `hotspot-info-${index}`;
       });
     }
 
@@ -564,9 +561,9 @@
       const currentHotspots = scenes[currentScene]?.hotspots || [];
       currentHotspots.forEach((hotspot, index) => {
         const mesh = scene.getObjectByName(`hotspot-${index}`);
-        const infoElement = document.getElementById(`hotspot-info-${index}`);
+        const element = document.getElementById(`hotspot-${index}`);
 
-        if (mesh && infoElement) {
+        if (mesh && element) {
           // 将3D位置转换为屏幕坐标
           const screenPosition = mesh.position.clone();
           screenPosition.project(camera);
@@ -576,11 +573,11 @@
             const x = (screenPosition.x + 1) * window.innerWidth / 2;
             const y = (-screenPosition.y + 1) * window.innerHeight / 2;
 
-            infoElement.style.left = `${x}px`;
-            infoElement.style.top = `${y}px`;
-            infoElement.style.display = 'block';
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+            element.style.display = 'block';
           } else {
-            infoElement.style.display = 'none';
+            element.style.display = 'none';
           }
         }
       });
@@ -727,6 +724,30 @@
         const resetViewBtn = document.getElementById('resetViewBtn');
         resetViewBtn.addEventListener('click', resetView);
 
+        // 初始化背景音乐
+        if (urlParams.has('bgMusic')) {
+          try {
+            const bgMusicJson = decodeURIComponent(urlParams.get('bgMusic'));
+            const bgMusicConfig = JSON.parse(bgMusicJson);
+
+            const bgMusic = document.getElementById('bgMusic');
+            bgMusic.src = bgMusicConfig.url;
+            bgMusic.volume = 1;
+
+            // 尝试自动播放
+            bgMusic.play().catch(error => {
+              console.log('Auto-play prevented:', error);
+              // 自动播放被阻止时，更新UI状态
+              isPlaying = false;
+              const audioIcon = document.querySelector('.audio-icon');
+              audioIcon.classList.remove('playing');
+              audioIcon.classList.add('paused');
+            });
+          } catch (e) {
+            console.error('背景音乐配置解析失败:', e);
+          }
+        }
+
       } catch (error) {
         showError('初始化失败: ' + error.message);
         console.error('Full error:', error);
@@ -868,6 +889,16 @@
           currentScene = sceneName;
           updateSceneButtons();
 
+          // 更新动态结束状态为场景配置的初始视角
+          const sceneConfig = scenes[sceneName];
+          if (sceneConfig.initialView) {
+            initialAnimation.end = {
+              fov: sceneConfig.initialView.fov || 75,
+              lat: sceneConfig.initialView.lat || 0,
+              lon: sceneConfig.initialView.lon || 0
+            };
+          }
+
           // 清除当前场景
           while (scene.children.length > 0) {
             scene.remove(scene.children[0]);
@@ -959,7 +990,7 @@
       document.querySelectorAll('.scene-btn').forEach(btn => {
         btn.classList.remove('active');
       });
-      // 给当前场景的按钮添加 active 类
+      // 给当前场���的按钮添加 active 类
       const currentBtn = document.getElementById(`${currentScene}-btn`);
       if (currentBtn) {
         currentBtn.classList.add('active');
@@ -979,7 +1010,13 @@
         audioIcon.classList.remove('playing');
         audioIcon.classList.add('paused');
       } else {
-        bgMusic.play();
+        bgMusic.play().catch(error => {
+          console.error('播放失败:', error);
+          // 播放失败时保持暂停状态
+          isPlaying = false;
+          audioIcon.classList.remove('playing');
+          audioIcon.classList.add('paused');
+        });
         audioIcon.classList.remove('paused');
         audioIcon.classList.add('playing');
       }
@@ -1003,7 +1040,7 @@
       }
     });
 
-    // 由于语音列表可能需要一段时间才能加载完成,添加以下代码来确保我们能获取到所有声音:
+    // 由于语音列表可能要一段时间才能加载完成,添加以下代码来确保我们能获取到所有声音:
     if ('speechSynthesis' in window) {
       // Chrome 需要这个 hack 来正确加载声音列表
       speechSynthesis.getVoices();
@@ -1029,7 +1066,7 @@
       const sphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 500);
       const intersectPoint = new THREE.Vector3();
 
-      // 计算射线与球体的交点
+      // 计算射线与球的交点
       raycaster.ray.intersectSphere(sphere, intersectPoint);
 
       if (intersectPoint) {
@@ -1088,7 +1125,7 @@
       }
     }
 
-    // 添加回到主视角的动画配置
+    // 修改回到主视角的动画配置
     const resetViewAnimation = {
       active: false,
       startTime: 0,
@@ -1099,16 +1136,16 @@
         lon: 0
       },
       end: {
-        fov: 75,  // 默认视角
-        lat: 0,   // 水平视角
-        lon: 0    // 正面视角
+        fov: 75,  // 这些值会被场景的 initialView 覆盖
+        lat: 0,
+        lon: 0
       },
       easing: function (t) {
         return 1 - Math.pow(1 - t, 3); // easeOutCubic
       }
     };
 
-    // 添加回到主视角的函数
+    // 修改回到主视角的函数
     function resetView() {
       resetViewAnimation.active = true;
       resetViewAnimation.startTime = Date.now();
@@ -1118,12 +1155,34 @@
       resetViewAnimation.start.lat = lat;
       resetViewAnimation.start.lon = lon;
 
+      // 使用当前场景的初始视角配置
+      const currentSceneConfig = scenes[currentScene];
+      if (currentSceneConfig.initialView) {
+        resetViewAnimation.end = {
+          fov: currentSceneConfig.initialView.fov || 75,
+          lat: currentSceneConfig.initialView.lat || 0,
+          lon: currentSceneConfig.initialView.lon || 0
+        };
+      }
+
       // 停止自动旋转
       autoRotate = false;
       if (autoRotateTimer) {
         clearTimeout(autoRotateTimer);
       }
     }
+
+    // 添加音频加载事件监听
+    bgMusic.addEventListener('loadeddata', () => {
+      console.log('背景音乐加载完成');
+    });
+
+    bgMusic.addEventListener('error', (e) => {
+      console.error('背景音乐加载失败:', e);
+      isPlaying = false;
+      audioIcon.classList.remove('playing');
+      audioIcon.classList.add('paused');
+    });
   </script>
 </body>
 
