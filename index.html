@@ -175,8 +175,8 @@
     }
 
     .audio-btn {
-      width: 40px;
-      height: 40px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: rgba(0, 0, 0, 0.5);
       border: none;
@@ -188,8 +188,8 @@
     }
 
     .audio-icon {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
@@ -223,15 +223,15 @@
 
     .narrative-btn {
       width: auto;
-      height: 40px;
-      padding: 0 20px;
-      border-radius: 20px;
+      height: 32px;
+      padding: 0 16px;
+      border-radius: 16px;
       background: rgba(0, 0, 0, 0.5);
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       color: #fff;
       transition: all 0.3s;
     }
@@ -241,12 +241,11 @@
     }
 
     .narrative-icon {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
-      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTEyIDJjLTUuNTIgMC0xMCA0LjQ4LTEwIDEwczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMC00LjQ4LTEwLTEwLTEwem0tMiAxNC41di05bDYgNC41LTYgNC41eiIvPjwvc3ZnPg==');
     }
 
     .narrative-icon.playing {
@@ -254,7 +253,113 @@
     }
 
     .narrative-text {
-      font-size: 14px;
+      font-size: 12px;
+    }
+
+    .reset-view-btn {
+      position: fixed;
+      top: 60px;
+      left: 30px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      transition: all 0.3s ease;
+    }
+
+    .reset-view-btn:hover {
+      background: rgba(0, 0, 0, 0.7);
+      transform: scale(1.05);
+    }
+
+    .reset-view-btn:active {
+      transform: scale(0.95);
+    }
+
+    .reset-view-icon {
+      width: 16px;
+      height: 16px;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTEyIDVWMUw3IDZsNSA1VjdjMy4zMSAwIDYgMi42OSA2IDZzLTIuNjkgNi02IDYtNi0yLjY5LTYtNkg0YzAgNC40MiAzLjU4IDggOCA4czgtMy41OCA4LTgtMy41OC04LTgtOHoiLz48L3N2Zz4=');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    /* 修改控制按钮的公共样式 */
+    .controls-container {
+      position: fixed;
+      top: 30px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      z-index: 999;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+    }
+
+    /* 修改每个控制按钮的容器样式 */
+    .control-item {
+      display: flex;
+      justify-content: flex-end;
+      padding-right: calc(var(--level) * 16px);
+      /* 根据层级缩进 */
+    }
+
+    /* 修改音频控制按钮样式 */
+    .audio-control {
+      position: static;
+      --level: 0;
+      /* 第一层级 */
+    }
+
+    /* 修改解说控制按钮样式 */
+    .narrative-control {
+      position: static;
+      --level: 1;
+      /* 第二层级 */
+    }
+
+    /* 修改重置视角按钮样式 */
+    .reset-view-btn {
+      position: static;
+      --level: 2;
+      /* 第三层级 */
+      width: 32px;
+      height: 32px;
+    }
+
+    /* 统一所有按钮的悬停效果 */
+    .audio-btn:hover,
+    .narrative-btn:hover,
+    .reset-view-btn:hover {
+      background: rgba(0, 0, 0, 0.7);
+      transform: scale(1.05);
+    }
+
+    .audio-btn:active,
+    .narrative-btn:active,
+    .reset-view-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* 添加按钮的过渡效果 */
+    .audio-btn,
+    .narrative-btn,
+    .reset-view-btn {
+      transition: all 0.3s ease;
     }
   </style>
 </head>
@@ -264,26 +369,42 @@
   <div id="loading">加载中...</div>
   <div class="fade"></div>
 
-  <div class="scene-buttons"></div>
+  <!-- 将所有控制按钮包装在一个容器中 -->
+  <div class="controls-container">
+    <div class="control-group">
+      <div class="control-item">
+        <div class="audio-control">
+          <button id="audioBtn" class="audio-btn">
+            <i class="audio-icon playing"></i>
+          </button>
+        </div>
+      </div>
 
-  <div class="audio-control">
-    <button id="audioBtn" class="audio-btn">
-      <i class="audio-icon playing"></i>
-    </button>
+      <div class="control-item">
+        <div class="narrative-control">
+          <button id="narrativeBtn" class="narrative-btn">
+            <i class="narrative-icon"></i>
+            <span class="narrative-text">解说</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="control-item">
+        <div class="reset-view-btn" id="resetViewBtn">
+          <i class="reset-view-icon"></i>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- 添加场景按钮容器 -->
+  <div class="scene-buttons"></div>
 
   <audio id="bgMusic" loop></audio>
 
   <audio id="narrativeAudio">
     <source src="" type="audio/mpeg">
   </audio>
-
-  <div class="narrative-control">
-    <button id="narrativeBtn" class="narrative-btn">
-      <i class="narrative-icon"></i>
-      <span class="narrative-text">解说</span>
-    </button>
-  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"
     onerror="showError('Three.js 加载失败')"></script>
@@ -327,7 +448,7 @@
         lat: 0,        // 水平视角
         lon: 0         // 保持正对方向
       },
-      // 使用更平滑的缓动函���
+      // 使用更平滑的缓动函
       easing: function (t) {
         // easeOutCirc - 开始快然后逐渐减速
         return Math.sqrt(1 - Math.pow(t - 1, 2));
@@ -481,7 +602,7 @@
         console.log('完整 URL:', window.location.href);
         console.log('原始参数字符串:', window.location.search);
 
-        // 解析场景配置
+        // 解析景配置
         if (urlParams.has('scenes')) {
           try {
             const scenesJson = decodeURIComponent(urlParams.get('scenes'));
@@ -602,6 +723,10 @@
 
         updateSceneButtons();  // 设置初始按钮状态
 
+        // 添加重置视角按钮的事件监听
+        const resetViewBtn = document.getElementById('resetViewBtn');
+        resetViewBtn.addEventListener('click', resetView);
+
       } catch (error) {
         showError('初始化失败: ' + error.message);
         console.error('Full error:', error);
@@ -678,6 +803,23 @@
         if (progress >= 1) {
           initialAnimation.active = false;
           // 动画结束后启动自动旋转定时器
+          endUserInteraction();
+        }
+      } else if (resetViewAnimation.active) {
+        const elapsed = Date.now() - resetViewAnimation.startTime;
+        const progress = Math.min(elapsed / resetViewAnimation.duration, 1);
+        const easeProgress = resetViewAnimation.easing(progress);
+
+        // 平滑过渡所有参数
+        camera.fov = resetViewAnimation.start.fov + (resetViewAnimation.end.fov - resetViewAnimation.start.fov) * easeProgress;
+        lat = resetViewAnimation.start.lat + (resetViewAnimation.end.lat - resetViewAnimation.start.lat) * easeProgress;
+        lon = resetViewAnimation.start.lon + (resetViewAnimation.end.lon - resetViewAnimation.start.lon) * easeProgress;
+
+        camera.updateProjectionMatrix();
+
+        if (progress >= 1) {
+          resetViewAnimation.active = false;
+          // 动画结束后重新启动自动旋转
           endUserInteraction();
         }
       } else if (autoRotate && !isUserInteracting) {
@@ -776,7 +918,7 @@
     // 添加消息监听
     window.addEventListener('message', receiveMessage, false);
 
-    // 修改用户交互相关函数
+    // 修改用交互相关函数
     function startUserInteraction() {
       isUserInteracting = true;
       // 停止自动转
@@ -921,20 +1063,66 @@
     // 添加动态更新场景按钮 HTML 的函数
     function updateSceneButtonsHTML() {
       const buttonsContainer = document.querySelector('.scene-buttons');
-      buttonsContainer.innerHTML = ''; // 清空现有按钮
+      if (!buttonsContainer) {
+        console.error('Scene buttons container not found');
+        return;
+      }
 
-      Object.keys(scenes).forEach(sceneKey => {
-        const scene = scenes[sceneKey];
-        const button = document.createElement('button');
-        button.onclick = () => switchScene(sceneKey);
-        button.className = 'scene-btn';
-        button.id = `${sceneKey}-btn`;
-        button.textContent = scene.name;
-        buttonsContainer.appendChild(button);
-      });
+      try {
+        buttonsContainer.innerHTML = ''; // 清空现有按钮
 
-      // 更新按钮状态
-      updateSceneButtons();
+        Object.keys(scenes).forEach(sceneKey => {
+          const scene = scenes[sceneKey];
+          const button = document.createElement('button');
+          button.onclick = () => switchScene(sceneKey);
+          button.className = 'scene-btn';
+          button.id = `${sceneKey}-btn`;
+          button.textContent = scene.name;
+          buttonsContainer.appendChild(button);
+        });
+
+        // 更新按钮状态
+        updateSceneButtons();
+      } catch (error) {
+        console.error('Error updating scene buttons:', error);
+      }
+    }
+
+    // 添加回到主视角的动画配置
+    const resetViewAnimation = {
+      active: false,
+      startTime: 0,
+      duration: 1000,  // 1秒的动画时间
+      start: {
+        fov: 0,
+        lat: 0,
+        lon: 0
+      },
+      end: {
+        fov: 75,  // 默认视角
+        lat: 0,   // 水平视角
+        lon: 0    // 正面视角
+      },
+      easing: function (t) {
+        return 1 - Math.pow(1 - t, 3); // easeOutCubic
+      }
+    };
+
+    // 添加回到主视角的函数
+    function resetView() {
+      resetViewAnimation.active = true;
+      resetViewAnimation.startTime = Date.now();
+
+      // 记录当前状态作为动画起点
+      resetViewAnimation.start.fov = camera.fov;
+      resetViewAnimation.start.lat = lat;
+      resetViewAnimation.start.lon = lon;
+
+      // 停止自动旋转
+      autoRotate = false;
+      if (autoRotateTimer) {
+        clearTimeout(autoRotateTimer);
+      }
     }
   </script>
 </body>
