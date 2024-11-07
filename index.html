@@ -878,31 +878,31 @@
       }
     }
 
-    // 初始化时使用参数
-    const { scenes, bgMusic, initialScene } = getUrlParams()
-    currentScene = initialScene
+    // 初始化全局变量
+    const { scenes, bgMusic: bgMusicConfig, initialScene } = getUrlParams()
+    let currentScene = initialScene
 
     // 设置背景音乐
-    if (bgMusic.url) {
-      bgMusicElement.src = bgMusic.url
+    const bgMusicElement = document.getElementById('bgMusic')
+    if (bgMusicConfig.url) {
+      bgMusicElement.src = bgMusicConfig.url
     }
 
+    // 生成场景按钮
     function generateSceneButtons() {
-      const buttonsContainer = document.getElementById('sceneButtons');
+      const buttonsContainer = document.getElementById('sceneButtons')
       Object.entries(scenes).forEach(([sceneId, scene]) => {
-        const button = document.createElement('button');
-        button.onclick = () => switchScene(sceneId);
-        button.className = 'scene-btn';
-        button.id = `${sceneId}-btn`;
-        button.textContent = scene.name;
-        buttonsContainer.appendChild(button);
-      });
+        const button = document.createElement('button')
+        button.onclick = () => switchScene(sceneId)
+        button.className = 'scene-btn'
+        button.id = `${sceneId}-btn`
+        button.textContent = scene.name
+        buttonsContainer.appendChild(button)
+      })
     }
 
-    // 在获取URL参数后调用
-    const { scenes, bgMusic, initialScene } = getUrlParams();
-    currentScene = initialScene;
-    generateSceneButtons(); // 生成场景按钮
+    // 初始化时调用生成按钮
+    generateSceneButtons()
   </script>
 </body>
 
