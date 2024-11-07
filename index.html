@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>全景图</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 16px;
+    }
+
+    .scene-buttons {
+      position: fixed;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 0 30px;
+      z-index: 999;
+    }
+
+    .scene-buttons button {
+      flex: 1;
+      max-width: 120px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0.6;
+    }
+
+    .scene-buttons button.active {
+      background: rgba(255, 255, 255, 0.4);
+      opacity: 1;
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .scene-buttons button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      opacity: 0.8;
+    }
+
+    .scene-buttons button:active {
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0.95);
+    }
+
+    /* 添加动画相关样式 */
+    .fade {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: black;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      z-index: 1000;
+    }
+
+    .fade.active {
+      opacity: 1;
+    }
+
+    .hotspot {
+      position: fixed;
+      width: 32px;
+      height: 32px;
+      transform-origin: center center;
+      will-change: transform;
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 100;
+    }
+
+    .hotspot::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-sizing: border-box;
+      animation: pulse 2s infinite;
+    }
+
+    .hotspot::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #fff;
+      border-radius: 50%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .hotspot-info {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100%);
+      margin-top: -10px;
+    }
+
+    .hotspot:hover .hotspot-info {
+      opacity: 1;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 0.4;
+      }
+
+      100% {
+        transform: scale(0.8);
+        opacity: 0.8;
+      }
+    }
+
+    .audio-control {
+      position: fixed;
+      top: 60px;
+      right: 30px;
+      z-index: 999;
+    }
+
+    .audio-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .audio-icon {
+      width: 16px;
+      height: 16px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .audio-icon.playing {
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTMgOXYNmgNsMTItOXYxOGwtMTItOUgzeiIvPjwvc3ZnPg==');
+      animation: audioRotate 3s linear infinite;
+    }
+
+    .audio-icon.paused {
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTYgNWgybDEyIDd2LTdoMnYxOGgtMnYtN2wtMTIgN2gtMnoiLz48L3N2Zz4=');
+    }
+
+    @keyframes audioRotate {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .narrative-control {
+      position: fixed;
+      top: 60px;
+      right: 90px;
+      z-index: 999;
+    }
+
+    .narrative-btn {
+      width: auto;
+      height: 40px;
+      padding: 0 20px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      transition: all 0.3s;
+    }
+
+    .narrative-btn:hover {
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    .narrative-icon {
+      width: 16px;
+      height: 16px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTEyIDJjLTUuNTIgMC0xMCA0LjQ4LTEwIDEwczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMC00LjQ4LTEwLTEwLTEwem0tMiAxNC41di05bDYgNC41LTYgNC41eiIvPjwvc3ZnPg==');
+    }
+
+    .narrative-icon.playing {
+      animation: pulse 2s infinite;
+    }
+
+    .narrative-text {
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div id="loading">加载中...</div>
+  <div class="fade"></div>
+
+  <div class="scene-buttons">
+    <button onclick="switchScene('scene1')" class="scene-btn" id="scene1-btn">山脉全景</button>
+    <button onclick="switchScene('scene2')" class="scene-btn" id="scene2-btn">天文台全景</button>
+    <button onclick="switchScene('scene3')" class="scene-btn" id="scene3-btn">博物馆全景</button>
+  </div>
+
+  <div class="audio-control">
+    <button id="audioBtn" class="audio-btn">
+      <i class="audio-icon playing"></i>
+    </button>
+  </div>
+
+  <audio id="bgMusic" loop>
+    <source src="http://music.163.com/song/media/outer/url?id=1901371647.mp3" type="audio/mpeg">
+  </audio>
+
+  <audio id="narrativeAudio">
+    <source src="" type="audio/mpeg">
+  </audio>
+
+  <div class="narrative-control">
+    <button id="narrativeBtn" class="narrative-btn">
+      <i class="narrative-icon"></i>
+      <span class="narrative-text">解说</span>
+    </button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"
+    onerror="showError('Three.js 加载失败')"></script>
+  <script>
+    let camera, scene, renderer;
+    let isUserInteracting = false,
+      onPointerDownMouseX = 0,
+      onPointerDownMouseY = 0,
+      lon = 0,
+      onPointerDownLon = 0,
+      lat = 0,
+      onPointerDownLat = 0,
+      phi = 0,
+      theta = 0;
+
+    // 修改自动旋转相关变量
+    let autoRotateTimer = null;
+    const AUTO_ROTATE_DELAY = 5000;     // 5秒无操作后开始自动旋转
+    const AUTO_ROTATE_SPEED = 0.05;     // 降低旋转速度，从 0.2 改为 0.05
+    let autoRotate = false;
+
+    // 添加场景切换功能
+    const scenes = {
+      scene1: {
+        url: 'https://pannellum.org/images/cerro-toco-0.jpg',
+        name: '山脉全景'
+      },
+      scene2: {
+        url: 'https://pannellum.org/images/alma.jpg',
+        name: '天文台全景'
+      },
+      scene3: {
+        url: 'https://pannellum.org/images/bma-1.jpg',
+        name: '博物馆全景'
+      }
+    };
+
+    let currentScene = 'scene1';
+
+    // 修改初始化动画相关变量
+    let initialAnimation = {
+      active: false,
+      startTime: 0,
+      duration: 3000,  // 延长到3秒，让动画更平缓
+      // 起始状态正上方垂直俯视
+      start: {
+        fov: 100,      // 更大的视野
+        lat: 89.9,     // 几乎垂直向下（90度会导致万向锁，所以用89.9）
+        lon: 0         // 正对方向
+      },
+      // 结束状态：常视角
+      end: {
+        fov: 75,       // 正常视野
+        lat: 0,        // 水平视角
+        lon: 0         // 保持正对方向
+      },
+      // 使用更平滑的缓动函数
+      easing: function (t) {
+        // easeOutCirc - 开始快然后逐渐减速
+        return Math.sqrt(1 - Math.pow(t - 1, 2));
+      }
+    };
+
+    // 修改热点配置，使用球面坐标系（经纬度）
+    const hotspots = {
+      scene1: [
+        {
+          position: new THREE.Vector3(-350, 100, 200), // 在3D空间中的固定坐标
+          title: '天文台',
+          description: '点击前往天文台',
+          target: 'scene2'
+        },
+        {
+          position: new THREE.Vector3(300, -50, -300),
+          title: '博物馆',
+          description: '点击前往博物馆',
+          target: 'scene3'
+        }
+      ],
+      scene2: [
+        {
+          position: new THREE.Vector3(0, 0, -400),
+          title: '返回山脉',
+          description: '返回山脉全景',
+          target: 'scene1'
+        }
+      ],
+      scene3: [
+        {
+          position: new THREE.Vector3(0, 100, -400),
+          title: '返回山脉',
+          description: '返回山脉全景',
+          target: 'scene1'
+        }
+      ]
+    };
+
+    // 修改场景解说配置
+    const narratives = {
+      scene1: {
+        text: `这里是美丽的山脉全景。远处连绵的群山层峦叠嶂，山峰直插云霄，云雾缭绕其间，
+              呈现出一幅壮丽的自然画卷。在山脉的怀抱中，我们的村庄静静地依偎在山脚下，
+              传统的建筑与自然环境完美融合，展现出独特的乡村魅力。您可以看到远处的天文台和博物馆，
+              这些都是我们村庄的文化地标。`
+      },
+      scene2: {
+        text: `这里是我们村里的天文台，建于2020年，是村里重要的科普教育基地。
+              天文台采用现代化的设计，配备了专业的天文望远镜和观测设备。
+              在这里，游客可以观测星空，了解天文知识，每到晴朗的夜晚，
+              这里都会举办星空观测活动，深受村民和游客的喜爱。`
+      },
+      scene3: {
+        text: `这是我们村的博物馆，收藏展示了大量珍贵的历史文物和民俗展品。
+              博物馆分为历史展区、民俗展区和非遗展区三个主要部分。
+              在这里，您可以了解到我们村的发展历史、传统文化和民间艺术。
+              博物馆不仅是一个展示空间，也是村民文化活动的重要场所。`
+      }
+    };
+
+    // 添加解说控制
+    let isNarrativePlaying = false;
+    const narrativeBtn = document.getElementById('narrativeBtn');
+    const narrativeAudio = document.getElementById('narrativeAudio');
+    const narrativeIcon = narrativeBtn.querySelector('.narrative-icon');
+
+    // 解说控制函数
+    function toggleNarrative() {
+      const currentNarrative = narratives[currentScene];
+
+      if (!isNarrativePlaying) {
+        // 开始播放解说
+        if (bgMusic && !bgMusic.paused) {
+          bgMusic.volume = 0.2;
+        }
+
+        const text = currentNarrative.text;
+
+        if ('speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'zh-CN';
+          utterance.rate = 0.9;  // 稍微放慢语速
+          utterance.pitch = 1.2; // 提高一点音调
+
+          // 获取所有可用的语音
+          const voices = speechSynthesis.getVoices();
+          // 直接指定 Microsoft Xiaoxiao - Chinese (Mainland)
+          const preferredVoice = voices.find(voice =>
+            voice.name === 'Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland)'
+          );
+
+          if (preferredVoice) {
+            utterance.voice = preferredVoice;
+          } else {
+            // 备选 Microsoft Huihui
+            const fallbackVoice = voices.find(voice =>
+              voice.name === 'Microsoft Huihui Desktop - Chinese (Mainland)'
+            );
+            if (fallbackVoice) {
+              utterance.voice = fallbackVoice;
+            }
+          }
+
+          speechSynthesis.speak(utterance);
+          isNarrativePlaying = true;
+          narrativeIcon.classList.add('playing');
+          narrativeBtn.querySelector('.narrative-text').textContent = '停止解说';
+
+          utterance.onend = () => {
+            isNarrativePlaying = false;
+            narrativeIcon.classList.remove('playing');
+            narrativeBtn.querySelector('.narrative-text').textContent = '解说';
+
+            if (bgMusic && !bgMusic.paused) {
+              bgMusic.volume = 1;
+            }
+          };
+        }
+      } else {
+        // 停止解说
+        if ('speechSynthesis' in window) {
+          speechSynthesis.cancel();
+        }
+        isNarrativePlaying = false;
+        narrativeIcon.classList.remove('playing');
+        narrativeBtn.querySelector('.narrative-text').textContent = '解说';
+
+        if (bgMusic && !bgMusic.paused) {
+          bgMusic.volume = 1;
+        }
+      }
+    }
+
+    // 添加点击事件
+    narrativeBtn.addEventListener('click', toggleNarrative);
+
+    // 在切换场景时止当前解说
+    const originalSwitchScene = switchScene;
+    switchScene = function (sceneName) {
+      if (isNarrativePlaying) {
+        toggleNarrative(); // 停止当前解说
+      }
+      originalSwitchScene(sceneName);
+    };
+
+    // 修改创建热点的函数
+    function createHotspots() {
+      // 移除现有热点
+      const existingHotspots = document.querySelectorAll('.hotspot');
+      existingHotspots.forEach(hotspot => hotspot.remove());
+
+      // 为当前场景创建热点
+      const currentHotspots = hotspots[currentScene] || [];
+      currentHotspots.forEach((hotspot, index) => {
+        // 创建3D物体作为热点
+        const geometry = new THREE.SphereGeometry(10, 16, 16);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.8
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        // 设置热点位置
+        mesh.position.copy(hotspot.position);
+        mesh.name = `hotspot-${index}`;
+        scene.add(mesh);
+
+        // 创建HTML元素显示热点信息
+        const element = document.createElement('div');
+        element.className = 'hotspot-info';
+        element.style.display = 'none';
+        element.textContent = `${hotspot.title}: ${hotspot.description}`;
+        document.getElementById('container').appendChild(element);
+        element.id = `hotspot-info-${index}`;
+      });
+    }
+
+    // 修改更新热点的函数
+    function updateHotspots() {
+      const currentHotspots = hotspots[currentScene] || [];
+      currentHotspots.forEach((hotspot, index) => {
+        const mesh = scene.getObjectByName(`hotspot-${index}`);
+        const infoElement = document.getElementById(`hotspot-info-${index}`);
+
+        if (mesh && infoElement) {
+          // 将3D位置转换为屏幕坐标
+          const screenPosition = mesh.position.clone();
+          screenPosition.project(camera);
+
+          // 检查热点是否在相机前方
+          if (screenPosition.z < 1) {
+            const x = (screenPosition.x + 1) * window.innerWidth / 2;
+            const y = (-screenPosition.y + 1) * window.innerHeight / 2;
+
+            infoElement.style.left = `${x}px`;
+            infoElement.style.top = `${y}px`;
+            infoElement.style.display = 'block';
+          } else {
+            infoElement.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    function showError(message) {
+      const loading = document.getElementById('loading');
+      loading.style.color = 'red';
+      loading.textContent = message;
+      console.error(message);
+    }
+
+    function init() {
+      try {
+        const container = document.getElementById('container');
+        const loading = document.getElementById('loading');
+
+        // 检查 THREE 是否存在
+        if (typeof THREE === 'undefined') {
+          throw new Error('THREE is not defined');
+        }
+        console.log('THREE version:', THREE.REVISION);
+
+        // 初始化场景
+        scene = new THREE.Scene();
+        console.log('Scene created:', scene);
+
+        // 初始化相机
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
+        camera.position.set(0, 0, 0.1);
+        console.log('Camera created:', camera);
+
+        // 在加载纹理之前就创建热点
+        createHotspots();
+
+        // 加载全景图纹理
+        const loader = new THREE.TextureLoader();
+        loader.load(
+          scenes[currentScene].url,
+          function (texture) {
+            const geometry = new THREE.SphereGeometry(500, 60, 40);
+            geometry.scale(-1, 1, 1);
+            const material = new THREE.MeshBasicMaterial({ map: texture });
+            const mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+            loading.style.display = 'none';
+            console.log('Mesh added to scene');
+
+            // 开始初始化动画
+            startInitialAnimation();
+          },
+          undefined,
+          function (err) {
+            console.error('加载纹理失败', err);
+            showError('加载失败: ' + err.message);
+          }
+        );
+
+        // 初始化渲染器
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+        console.log('Renderer created:', renderer);
+
+        // 检查 WebGL 支持
+        if (!renderer.capabilities.isWebGL2) {
+          console.log('Using WebGL 1');
+        } else {
+          console.log('Using WebGL 2');
+        }
+
+        // 添加事件监听
+        container.addEventListener('touchstart', onTouchStart, false);
+        container.addEventListener('touchmove', onTouchMove, false);
+        container.addEventListener('touchend', onTouchEnd, false);
+        window.addEventListener('resize', onWindowResize, false);
+
+        // 添加鼠标控制支持
+        container.addEventListener('mousedown', onMouseDown, false);
+        container.addEventListener('mousemove', onMouseMove, false);
+        container.addEventListener('mouseup', onMouseUp, false);
+        container.addEventListener('wheel', onMouseWheel, false);
+
+        updateSceneButtons();  // 设置初始按钮状态
+
+      } catch (error) {
+        showError('初始化失败: ' + error.message);
+        console.error('Full error:', error);
+      }
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function onTouchStart(event) {
+      startUserInteraction();
+      const touch = event.touches[0];
+      onPointerDownMouseX = touch.clientX;
+      onPointerDownMouseY = touch.clientY;
+      onPointerDownLon = lon;
+      onPointerDownLat = lat;
+    }
+
+    function onTouchMove(event) {
+      if (!isUserInteracting) return;
+      const touch = event.touches[0];
+      lon = (onPointerDownMouseX - touch.clientX) * 0.1 + onPointerDownLon;
+      lat = (touch.clientY - onPointerDownMouseY) * 0.1 + onPointerDownLat;
+    }
+
+    function onTouchEnd() {
+      endUserInteraction();
+    }
+
+    function onMouseDown(event) {
+      startUserInteraction();
+      onPointerDownMouseX = event.clientX;
+      onPointerDownMouseY = event.clientY;
+      onPointerDownLon = lon;
+      onPointerDownLat = lat;
+    }
+
+    function onMouseMove(event) {
+      if (isUserInteracting) {
+        lon = (onPointerDownMouseX - event.clientX) * 0.1 + onPointerDownLon;
+        lat = (event.clientY - onPointerDownMouseY) * 0.1 + onPointerDownLat;
+      }
+    }
+
+    function onMouseUp() {
+      endUserInteraction();
+    }
+
+    function onMouseWheel(event) {
+      const fov = camera.fov + event.deltaY * 0.05;
+      camera.fov = THREE.MathUtils.clamp(fov, 30, 90);
+      camera.updateProjectionMatrix();
+    }
+
+    // 修改 animate 函数的完整定义
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (initialAnimation.active) {
+        const elapsed = Date.now() - initialAnimation.startTime;
+        const progress = Math.min(elapsed / initialAnimation.duration, 1);
+        const easeProgress = initialAnimation.easing(progress);
+
+        // 平滑过渡所有参数
+        camera.fov = initialAnimation.start.fov + (initialAnimation.end.fov - initialAnimation.start.fov) * easeProgress;
+        lat = initialAnimation.start.lat + (initialAnimation.end.lat - initialAnimation.start.lat) * easeProgress;
+        lon = initialAnimation.start.lon + (initialAnimation.end.lon - initialAnimation.start.lon) * easeProgress;
+
+        camera.updateProjectionMatrix();
+
+        if (progress >= 1) {
+          initialAnimation.active = false;
+          // 动画结束后启动自动旋转定时器
+          endUserInteraction();
+        }
+      } else if (autoRotate && !isUserInteracting) {
+        lon += AUTO_ROTATE_SPEED;
+      }
+
+      update();
+      updateHotspots();
+    }
+
+    function update() {
+      try {
+        if (!camera || !scene || !renderer) {
+          console.log('Missing required objects:', { camera, scene, renderer });
+          return;
+        }
+
+        lat = Math.max(-85, Math.min(85, lat));
+        phi = THREE.MathUtils.degToRad(90 - lat);
+        theta = THREE.MathUtils.degToRad(lon);
+
+        const lookAtPoint = new THREE.Vector3(
+          Math.sin(phi) * Math.cos(theta),
+          Math.cos(phi),
+          Math.sin(phi) * Math.sin(theta)
+        );
+        camera.lookAt(lookAtPoint);
+
+        renderer.render(scene, camera);
+      } catch (error) {
+        showError('渲染失败: ' + error.message);
+        console.error('Render error:', error);
+      }
+    }
+
+    // 修改切换场景的方法
+    function switchScene(sceneName) {
+      if (scenes[sceneName]) {
+        const fade = document.querySelector('.fade');
+        fade.classList.add('active');
+
+        // 保存当前音乐状态
+        const wasPlaying = !bgMusic.paused;
+
+        setTimeout(() => {
+          currentScene = sceneName;
+          updateSceneButtons();
+          while (scene.children.length > 0) {
+            scene.remove(scene.children[0]);
+          }
+
+          const loader = new THREE.TextureLoader();
+          loader.load(
+            scenes[sceneName].url,
+            function (texture) {
+              const geometry = new THREE.SphereGeometry(500, 60, 40);
+              geometry.scale(-1, 1, 1);
+              const material = new THREE.MeshBasicMaterial({ map: texture });
+              const mesh = new THREE.Mesh(geometry, material);
+              scene.add(mesh);
+
+              setTimeout(() => {
+                fade.classList.remove('active');
+                startInitialAnimation();
+                createHotspots();
+
+                // 恢复音乐状态
+                if (wasPlaying) {
+                  bgMusic.play().catch(console.error);
+                }
+              }, 100);
+            },
+            undefined,
+            function (err) {
+              console.error('切换场景失败', err);
+              showError('切换失败: ' + err.message);
+              fade.classList.remove('active');
+            }
+          );
+        }, 500);
+      }
+    }
+
+    // 添加场景切换的通信方法
+    function receiveMessage(event) {
+      if (event.data && event.data.type === 'switchScene') {
+        switchScene(event.data.scene);
+      }
+    }
+
+    // 添加消息监听
+    window.addEventListener('message', receiveMessage, false);
+
+    // 修改用户交互相关函数
+    function startUserInteraction() {
+      isUserInteracting = true;
+      // 停止自动转
+      autoRotate = false;
+      // 清除定时器
+      if (autoRotateTimer) {
+        clearTimeout(autoRotateTimer);
+        autoRotateTimer = null;
+      }
+    }
+
+    function endUserInteraction() {
+      isUserInteracting = false;
+      // 设置定时器，延迟后开始动旋转
+      if (autoRotateTimer) {
+        clearTimeout(autoRotateTimer);
+      }
+      autoRotateTimer = setTimeout(() => {
+        autoRotate = true;
+      }, AUTO_ROTATE_DELAY);
+    }
+
+    // 修初始化动画启动函数
+    function startInitialAnimation() {
+      initialAnimation.active = true;
+      initialAnimation.startTime = Date.now();
+
+      // 设置初始状态
+      camera.fov = initialAnimation.start.fov;
+      lat = initialAnimation.start.lat;
+      lon = initialAnimation.start.lon;
+      camera.updateProjectionMatrix();
+    }
+
+    // 添加更新按钮状态的函数
+    function updateSceneButtons() {
+      // 移除所有按钮的 active 类
+      document.querySelectorAll('.scene-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      // 给当前场景的按钮添加 active 类
+      const currentBtn = document.getElementById(`${currentScene}-btn`);
+      if (currentBtn) {
+        currentBtn.classList.add('active');
+      }
+    }
+
+    // 添��音频控制
+    let isPlaying = true;
+    const audioBtn = document.getElementById('audioBtn');
+    const bgMusic = document.getElementById('bgMusic');
+    const audioIcon = audioBtn.querySelector('.audio-icon');
+
+    // 音频控制函数
+    function toggleAudio() {
+      if (isPlaying) {
+        bgMusic.pause();
+        audioIcon.classList.remove('playing');
+        audioIcon.classList.add('paused');
+      } else {
+        bgMusic.play();
+        audioIcon.classList.remove('paused');
+        audioIcon.classList.add('playing');
+      }
+      isPlaying = !isPlaying;
+    }
+
+    // 添加点击事件
+    audioBtn.addEventListener('click', toggleAudio);
+
+    // 启动应用
+    window.addEventListener('load', function () {
+      try {
+        if (!THREE) {
+          showError('Three.js 未加载');
+          return;
+        }
+        init();
+        animate();
+      } catch (error) {
+        showError('启动失败: ' + error.message);
+      }
+    });
+
+    // 由于语音列表可能需要一段时间才能加载完成,添加以下代码来确保我们能获取到所有声音:
+    if ('speechSynthesis' in window) {
+      // Chrome 需要这个 hack 来正确加载声音列表
+      speechSynthesis.getVoices();
+
+      // 等待声音列表加载完成
+      speechSynthesis.addEventListener('voiceschanged', function () {
+        const voices = speechSynthesis.getVoices();
+        console.log('Available voices:', voices.map(v => `${v.name} (${v.lang})`));
+      });
+    }
+
+    // 修改点击事件处理函数
+    function onMouseClick(event) {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+
+      // 创建一个球体来表示全景图的表面
+      const sphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 500);
+      const intersectPoint = new THREE.Vector3();
+
+      // 计算射线与球体的交点
+      raycaster.ray.intersectSphere(sphere, intersectPoint);
+
+      if (intersectPoint) {
+        console.log('点击位置的3D坐标:', {
+          x: Math.round(intersectPoint.x),
+          y: Math.round(intersectPoint.y),
+          z: Math.round(intersectPoint.z)
+        });
+
+        // 同时输出用于配置的Vector3格式
+        console.log('用于配置的格式:', `new THREE.Vector3(${Math.round(intersectPoint.x)}, ${Math.round(intersectPoint.y)}, ${Math.round(intersectPoint.z)})`);
+      }
+
+      // 保持原有的热点点击检测逻辑
+      const intersects = raycaster.intersectObjects(scene.children);
+      for (const intersect of intersects) {
+        if (intersect.object.name.startsWith('hotspot-')) {
+          const index = parseInt(intersect.object.name.split('-')[1]);
+          const hotspot = hotspots[currentScene][index];
+          if (hotspot && hotspot.target) {
+            switchScene(hotspot.target);
+            break;
+          }
+        }
+      }
+    }
+
+    // 添加点击事件监听
+    container.addEventListener('click', onMouseClick);
+  </script>
+</body>
+
+</html>
+
+</html>
