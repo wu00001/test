@@ -264,7 +264,7 @@
   <div id="loading">加载中...</div>
   <div class="fade"></div>
 
-  <div class="scene-buttons" id="sceneButtons"></div>
+  <div class="scene-buttons"></div>
 
   <div class="audio-control">
     <button id="audioBtn" class="audio-btn">
@@ -305,7 +305,9 @@
     const AUTO_ROTATE_SPEED = 0.05;     // 降低旋转速度，从 0.2 改为 0.05
     let autoRotate = false;
 
-    // 添加场景切换功能
+    // 将原来的静态场景配置改为空对象，等待从URL参数中获取
+    const scenes = {};
+
     let currentScene = 'scene1';
 
     // 修改初始化动画相关变量
@@ -325,9 +327,9 @@
         lat: 0,        // 水平视角
         lon: 0         // 保持正对方向
       },
-      // 使用更平滑的缓动函数
+      // 使用更平滑的缓动函���
       easing: function (t) {
-        // easeOutCirc - 始快然后逐渐减速
+        // easeOutCirc - 开始快然后逐渐减速
         return Math.sqrt(1 - Math.pow(t - 1, 2));
       }
     };
@@ -340,10 +342,9 @@
 
     // 解说控制函数
     function toggleNarrative() {
-      const currentNarrative = narratives[currentScene]?.narrative;
+      const currentNarrative = scenes[currentScene]?.narrative;
 
       if (!isNarrativePlaying && currentNarrative) {
-        // 开始播放解说
         if (bgMusic && !bgMusic.paused) {
           bgMusic.volume = 0.2;
         }
@@ -361,13 +362,6 @@
 
           if (preferredVoice) {
             utterance.voice = preferredVoice;
-          } else {
-            const fallbackVoice = voices.find(voice =>
-              voice.name === 'Microsoft Huihui Desktop - Chinese (Mainland)'
-            );
-            if (fallbackVoice) {
-              utterance.voice = fallbackVoice;
-            }
           }
 
           speechSynthesis.speak(utterance);
@@ -386,7 +380,6 @@
           };
         }
       } else {
-        // 停止解说
         if ('speechSynthesis' in window) {
           speechSynthesis.cancel();
         }
@@ -419,7 +412,7 @@
       existingHotspots.forEach(hotspot => hotspot.remove());
 
       // 为当前场景创建热点
-      const currentHotspots = hotspots[currentScene] || [];
+      const currentHotspots = scenes[currentScene]?.hotspots || [];
       currentHotspots.forEach((hotspot, index) => {
         // 创建3D物体作为热点
         const geometry = new THREE.SphereGeometry(10, 16, 16);
@@ -447,7 +440,7 @@
 
     // 修改更新热点的函数
     function updateHotspots() {
-      const currentHotspots = hotspots[currentScene] || [];
+      const currentHotspots = scenes[currentScene]?.hotspots || [];
       currentHotspots.forEach((hotspot, index) => {
         const mesh = scene.getObjectByName(`hotspot-${index}`);
         const infoElement = document.getElementById(`hotspot-info-${index}`);
@@ -481,6 +474,62 @@
 
     function init() {
       try {
+        // 解析 URL 参数
+        const urlParams = new URLSearchParams(window.location.search);
+
+        // 打印调试信息
+        console.log('完整 URL:', window.location.href);
+        console.log('原始参数字符串:', window.location.search);
+
+        // 解析场景配置
+        if (urlParams.has('scenes')) {
+          try {
+            const scenesJson = decodeURIComponent(urlParams.get('scenes'));
+            const scenesConfig = JSON.parse(scenesJson);
+
+            // 处理每个场景的热点位置，将字符串坐标转换为 THREE.Vector3 对象
+            Object.keys(scenesConfig).forEach(sceneKey => {
+              const scene = scenesConfig[sceneKey];
+              if (scene.hotspots) {
+                scene.hotspots = scene.hotspots.map(hotspot => ({
+                  ...hotspot,
+                  position: new THREE.Vector3(
+                    hotspot.position.x,
+                    hotspot.position.y,
+                    hotspot.position.z
+                  )
+                }));
+              }
+            });
+
+            // 使用传入的场景配置
+            Object.assign(scenes, scenesConfig);
+            console.log('加载的场景配置:', scenes);
+
+            // 更新场景按钮
+            updateSceneButtons();
+
+          } catch (e) {
+            console.error('场景配置解析失败:', e);
+            showError('场景配置解析失败: ' + e.message);
+          }
+        } else {
+          showError('未找到场景配置参数');
+          return;
+        }
+
+        // 设置初始场景
+        if (urlParams.has('initialScene') && scenes[urlParams.get('initialScene')]) {
+          currentScene = urlParams.get('initialScene');
+        } else {
+          // 如果没有指定初始场景，使用第一个场景
+          currentScene = Object.keys(scenes)[0];
+        }
+        console.log('设置初始场景:', currentScene);
+
+        // 更新场景按钮 HTML
+        updateSceneButtonsHTML();
+
         const container = document.getElementById('container');
         const loading = document.getElementById('loading');
 
@@ -664,7 +713,7 @@
       }
     }
 
-    // 修改切换场景的方法
+    // 修改切换场景函数，使用动态场景数据
     function switchScene(sceneName) {
       if (scenes[sceneName]) {
         const fade = document.querySelector('.fade');
@@ -676,10 +725,13 @@
         setTimeout(() => {
           currentScene = sceneName;
           updateSceneButtons();
+
+          // 清除当前场景
           while (scene.children.length > 0) {
             scene.remove(scene.children[0]);
           }
 
+          // 加载新场景
           const loader = new THREE.TextureLoader();
           loader.load(
             scenes[sceneName].url,
@@ -709,6 +761,8 @@
             }
           );
         }, 500);
+      } else {
+        console.error('场景不存在:', sceneName);
       }
     }
 
@@ -757,7 +811,7 @@
       camera.updateProjectionMatrix();
     }
 
-    // 添加更新按钮状态的函数
+    // 添加新按钮状态的函数
     function updateSceneButtons() {
       // 移除所有按钮的 active 类
       document.querySelectorAll('.scene-btn').forEach(btn => {
@@ -773,17 +827,17 @@
     // 添音频控制
     let isPlaying = true;
     const audioBtn = document.getElementById('audioBtn');
-    const bgMusicElement = document.getElementById('bgMusic');
+    const bgMusic = document.getElementById('bgMusic');
     const audioIcon = audioBtn.querySelector('.audio-icon');
 
     // 音频控制函数
     function toggleAudio() {
       if (isPlaying) {
-        bgMusicElement.pause();
+        bgMusic.pause();
         audioIcon.classList.remove('playing');
         audioIcon.classList.add('paused');
       } else {
-        bgMusicElement.play();
+        bgMusic.play();
         audioIcon.classList.remove('paused');
         audioIcon.classList.add('playing');
       }
@@ -807,7 +861,7 @@
       }
     });
 
-    // 由于语音列表可能需要一段时间才能加载完成,添加以下代码来确保们能获取到所有声:
+    // 由于语音列表可能需要一段时间才能加载完成,添加以下代码来确保我们能获取到所有声音:
     if ('speechSynthesis' in window) {
       // Chrome 需要这个 hack 来正确加载声音列表
       speechSynthesis.getVoices();
@@ -852,7 +906,7 @@
       for (const intersect of intersects) {
         if (intersect.object.name.startsWith('hotspot-')) {
           const index = parseInt(intersect.object.name.split('-')[1]);
-          const hotspot = hotspots[currentScene][index];
+          const hotspot = scenes[currentScene]?.hotspots?.[index];
           if (hotspot && hotspot.target) {
             switchScene(hotspot.target);
             break;
@@ -864,45 +918,24 @@
     // 添加点击事件监听
     container.addEventListener('click', onMouseClick);
 
-    // 获取URL参数
-    function getUrlParams() {
-      const params = new URLSearchParams(window.location.search)
-      const scenes = JSON.parse(decodeURIComponent(params.get('scenes') || '{}'))
-      const bgMusic = JSON.parse(decodeURIComponent(params.get('bgMusic') || '{}'))
-      const initialScene = params.get('initialScene') || 'scene1'
+    // 添加动态更新场景按钮 HTML 的函数
+    function updateSceneButtonsHTML() {
+      const buttonsContainer = document.querySelector('.scene-buttons');
+      buttonsContainer.innerHTML = ''; // 清空现有按钮
 
-      return {
-        scenes,
-        bgMusic,
-        initialScene
-      }
+      Object.keys(scenes).forEach(sceneKey => {
+        const scene = scenes[sceneKey];
+        const button = document.createElement('button');
+        button.onclick = () => switchScene(sceneKey);
+        button.className = 'scene-btn';
+        button.id = `${sceneKey}-btn`;
+        button.textContent = scene.name;
+        buttonsContainer.appendChild(button);
+      });
+
+      // 更新按钮状态
+      updateSceneButtons();
     }
-
-    // 初始化全局变量
-    const { scenes, bgMusic: bgMusicConfig, initialScene } = getUrlParams()
-    let currentScene = initialScene
-
-    // 设置背景音乐
-    const bgMusicElement = document.getElementById('bgMusic')
-    if (bgMusicConfig.url) {
-      bgMusicElement.src = bgMusicConfig.url
-    }
-
-    // 生成场景按钮
-    function generateSceneButtons() {
-      const buttonsContainer = document.getElementById('sceneButtons')
-      Object.entries(scenes).forEach(([sceneId, scene]) => {
-        const button = document.createElement('button')
-        button.onclick = () => switchScene(sceneId)
-        button.className = 'scene-btn'
-        button.id = `${sceneId}-btn`
-        button.textContent = scene.name
-        buttonsContainer.appendChild(button)
-      })
-    }
-
-    // 初始化时调用生成按钮
-    generateSceneButtons()
   </script>
 </body>
 
